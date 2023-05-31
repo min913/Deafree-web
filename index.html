@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Speech Recognition</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    
+    <nav>
+      <h1>Deafree</h1>
+      <button id="toggle-recognition">시작</button>
+      <button id="login-btn" class="btn">로그인</button>
+      
+    </nav>
+
+
+    
+    <meter id="volume-meter" min="0" max="100" low="20" high="80" optimum="50" value="0" style="width: 100%; margin-top: 20px;"></meter>
+    <div class="container">
+      <p id="transcript">음성인식 결과가 여기에 표시됩니다.</p>
+      <div class="text-size-wrapper">
+        <button id="increase-size-btn" class="btn">크게</button>
+        <button id="decrease-size-btn" class="btn">작게</button>
+      </div>
+    </div>
+    
+    <script type="module" src="main.js"></script>
+  </body>
+</html>
+
