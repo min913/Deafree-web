@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous" />
+    <style>
+        #volume-bar {
+          width: 100%;
+          height: 13px;
+          background-color:eee;
+        }
+        #volume {
+          height: 13px;
+          background-color: lightblue;
+        }
+      </style>
+
+</head>
+
+<body>
+    <nav>
+      <h1>Deafree</h1>
+    </nav>
+    <div id="volume-bar">
+        <div id="volume"></div>
+      </div>    
+    
+
+<div class="container">
+
+<div class="my-3">
+    <button id="stt-start-button" class="btn btn-secondary" type="button"><svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-microphone" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+        <rect x="9" y="2" width="6" height="11" rx="3"></rect>
+        <path d="M5 10a7 7 0 0 0 14 0"></path>
+        <line x1="8" y1="21" x2="16" y2="21"></line>
+        <line x1="12" y1="17" x2="12" y2="21"></line>
+     </svg>&nbsp;&nbsp;필라테스 시작 </button>
+
+    <button id="stt-stop-button" class="btn btn-secondary d-none" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-microphone" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+            <rect x="9" y="2" width="6" height="11" rx="3"></rect>
+            <path d="M5 10a7 7 0 0 0 14 0"></path>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+         </svg>
+        
+        
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-antenna-bars-3" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+        <line x1="6" y1="18" x2="6" y2="15"></line>
+        <line x1="10" y1="18" x2="10" y2="12"></line>
+        <line x1="14" y1="18" x2="14" y2="18.01"></line>
+        <line x1="18" y1="18" x2="18" y2="18.01"></line>
+     </svg>
+        
+        &nbsp;&nbsp; 운동 끝! </button>
+    <p id="message">마이크 허용 권한을 눌러주세요</p> 
+</div>
+
+<form action="" method="post" id="stt-form">
+
+    <div class="my-3">
+        <textarea name="content" class="form-control"></textarea>
+    </div>
+    
+</form>
+
+
+<script>
+      const volumeBar = document.querySelector('#volume-bar');
+    const volume = document.querySelector('#volume');
+
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        const audioContext = new AudioContext();
+        const source = audioContext.createMediaStreamSource(stream);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        source.connect(analyser);            
+
+        function renderVisualization() {
+          analyser.getByteFrequencyData(dataArray);
+          const maxAmplitude = Math.max(...dataArray);
+          const volumePercentage = maxAmplitude / 255;
+          volume.style.width = `${volumePercentage * 100}%`;
+          requestAnimationFrame(renderVisualization);
+        }
+
+        renderVisualization();
+      })
+      .catch(err => {
+        console.log('오디오 접근 오류:', err);
+      });
+    const stt_start_button = document.querySelector("#stt-start-button");
+    const stt_stop_button = document.querySelector("#stt-stop-button");
+
+    var message = document.querySelector("#message");
+    const stt_form = document.querySelector("#stt-form");
+    const content_field = document.querySelector('#stt-form [name=content]');
+    let content_field_value = "";  // STT 재시작시마다 results 값이 초기화됩니다.
+
+    //여기만 구글 형태로
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const speech_recognition = new SpeechRecognition();
+    speech_recognition.lang = "ko-kr";
+    speech_recognition.continuous = true;
+
+    function enable_stt() {
+        content_field_value = content_field.value;
+
+        speech_recognition.start();
+        message.innerHTML = "음성인식 중...";
+        stt_start_button.classList.toggle("d-none");
+        stt_stop_button.classList.toggle("d-none");
+    }
+
+    function disable_stt() {
+        speech_recognition.stop();
+        message.innerHTML = "버튼을 누르고 말씀하세요.";
+        stt_start_button.classList.toggle("d-none");
+        stt_stop_button.classList.toggle("d-none");
+    }
+    
+    // stt_start_button이 <form> 안에 있다면 submit 동작을 가지게 됩니다.
+    // 그런데 다른 STT동작을 해야지, form submit을 해서는 안 되는 것이잖아요.
+    // 아래 click handler에서 e.preventDefault(); 를 호출하여 원래 동작(form submit)을 안하게 하든지.
+    // stt_start_button은 <form> 외부로 빼시는 것이 낫습니다.
+    stt_start_button.addEventListener("click", () => { enable_stt(); });
+    stt_stop_button.addEventListener("click", () => { disable_stt(); });
+
+    speech_recognition.onresult = function (e) {
+        console.log(e.results);
+        // disable_stt();
+
+        // 매 result 반환 시마다 e.results의 개수가 늘어납니다.
+        const transcript = Array.from(e.results)
+            .map(result => result[0])
+            .map(speech => speech.transcript)
+            .join(' ');
+
+        console.log("transcript :", transcript);
+        content_field.value = content_field_value + " " + transcript;
+    };
+
+    speech_recognition.onerror = function (e) {
+        console.error(e);
+        disable_stt();
+    };
+
+// script 안에 </html>이 있었습니다.
+
+</script>
+
+</div>
+
+</body>
+
+</html>
